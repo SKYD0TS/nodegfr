@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const https = require('https');
 const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3000;
@@ -10,28 +12,70 @@ app.get('/scrape', async (req, res) => {
     const url = req.query.url;
     formData = await scrape(url)
 
-    // debugginz
-    // res.send(formData)
-    // return
-
-    // res.json(formData)
     const data = {
+        url: url,
         "questions": formData.questions
     };
     res.render('index', data)
+});
+
+app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, res) => {
+    const respondCount = req.body.respondCount || 1;
+    const formData = req.body;
+    const parsedData = {};
+    // Extract all unique question IDs from the form data
+    const questionIds = new Set(
+        Object.keys(formData).map(key => key.split('_')[0]
+    ));
+    // Process each question
+    questionIds.forEach(questionId => {
+        if(questionId == "url" || questionId == "respondCount") return; // Skip the URL field
+        parsedData[questionId] = {
+            answers: [],
+            chances: [],
+            multipleChoice: false
+        };
+
+        // Process regular answers and chances
+        if (formData[`${questionId}_answers`]) {
+            if(formData[`${questionId}_isMultipleChoice`] == "true") parsedData[questionId].multipleChoice = true;
+            parsedData[questionId].answers = formData[`${questionId}_answers`];
+            parsedData[questionId].chances = formData[`${questionId}_chances`].map(Number);
+        }
+    });
+    const data = remapParsedData(parsedData);
+
+    let baseUrl = formData.url;
+    // return;
+    //for loop respondCount times
+    res.send('✅ Successfully submitted to Google Form ' + baseUrl + ' with ' + respondCount + ' responses');
+    for (let i = 0; i < respondCount; i++) {
+        const formUrl = decodeToGoogleFormUrl(baseUrl, data);
+        https.get(formUrl, (response) => {
+            console.log(formUrl);
+        });
+    }
+    // res.send('Data received and processed');
 });
 
 app.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);
 });
 
-function decodeToGoogleFormUrl(data) {
+function decodeToGoogleFormUrl(baseUrl, data) {
+    //replace viewform with formResponse, use valid regex
+    baseUrl = baseUrl.replace(/viewform/, 'formResponse');
     // IMPORTANT: Replace 'YOUR_GOOGLE_FORM_ID' with your actual Google Form ID
-    const baseUrl = 'https://docs.google.com/forms/d/e/YOUR_GOOGLE_FORM_ID/viewform?usp=pp_url';
     const urlParams = new URLSearchParams();
 
     // Iterate through each entry (e.g., a question or field in the form)
     for (const entry of data) {
+        if(entry.name == "url") {
+            console.table(entry);
+            console.table(data);
+            console.table("ahhhh---");
+            continue
+        }
         const name = entry.name; // This is the Google Form entry ID (e.g., "entry.1166587114")
         const items = entry.items; // This is the array of options and their chances
 
@@ -58,43 +102,8 @@ function decodeToGoogleFormUrl(data) {
     return `${baseUrl}&${urlParams.toString()}`;
 }
 
-app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, res) => {
-    const respondCount = 0
-    const formData = req.body;
-    const parsedData = {};
-
-    // Extract all unique question IDs from the form data
-    const questionIds = new Set(
-        Object.keys(formData).map(key => key.split('_')[0]
-        ));
-
-    // Process each question
-    questionIds.forEach(questionId => {
-        parsedData[questionId] = {
-            answers: [],
-            chances: [],
-            multipleChoice: false
-        };
-
-        // Process regular answers and chances
-        if (formData[`${questionId}_answers`]) {
-            if(formData[`${questionId}_isMultipleChoice`] == "true") parsedData[questionId].multipleChoice = true;
-            parsedData[questionId].answers = formData[`${questionId}_answers`];
-            parsedData[questionId].chances = formData[`${questionId}_chances`].map(Number);
-        }
-    });
-    const data = remapParsedData(parsedData);
-    // res.json(data);
-    const formUrl = decodeToGoogleFormUrl(data);
-    res.json(formUrl)
-
-
-    // res.send('Data received and processed');
-});
-
 function remapParsedData(allEntriesData) {
     const remappedOutput = []; // Initialize as an array for the final output
-
     // Iterate over each key (e.g., "entry.1166587114", "another.entry.id")
     for (const entryKey in allEntriesData) {
         // Ensure the key belongs to the object itself, not its prototype chain

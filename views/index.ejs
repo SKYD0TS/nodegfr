@@ -11,6 +11,7 @@
 
 <body>
   <form id="probabilityForm" method="post" action="/save-probabilities">
+    <input type="text" hidden name="url" value="<%=url%>">
     <% questions.forEach((q) => { %>
     <div class="question-container">
       <h4><%= q.question %> (<%= q.type %>)</h4>
@@ -109,7 +110,7 @@
     </div>
     <hr>
     <% }) %>
-
+    <input type="number" name="respondCount" value="1">
     <button type="submit">Save Probabilities</button>
   </form>
 
