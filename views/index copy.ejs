@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survey Form</title>
+  <style>
+  </style>
+</head>
+
+<body>
+  <% questions.forEach((q) => { %>
+    <div class="question-container">
+      <h4><%= q.question %></h4>
+      
+      <% if (q.type === "Short Answer") { %>
+        <div class="option-input">
+          <input type="text" name="<%= q.name + '_1' %>">
+          <input type="number" name="<%= q.name + '_1_chance' %>" min="0" max="100" placeholder="% chance">
+        </div>
+        <button type="button">Add More Possible Option</button>
+      
+      <% } else if (q.type === "Paragraph") { %>
+        <div class="option-input">
+          <textarea name="<%= q.name + '_1' %>" rows="3"></textarea>
+          <input type="number" name="<%= q.name + '_1_chance' %>" min="0" max="100" placeholder="% chance">
+        </div>
+        <button type="button">Add More Possible Option</button>
+      
+      <% } else if (q.type === "Multiple Choice") { %>
+        <ul style="list-style-type: none; padding-left: 0;">
+          <% q.options.forEach((option, index) => { %>
+            <li>
+              <input type="radio" id="<%= q.name + '_' + index %>" name="<%= q.name %>" value="<%= option %>">
+              <label for="<%= q.name + '_' + index %>"><%= option %></label>
+              <input type="number" name="<%= q.name + '_1_chance' %>" min="0" max="100" placeholder="% chance">
+            </li>
+          <% }) %>
+        </ul>
+        <% if (q.hasOtherOptions) { %>
+          <div>
+            <input type="radio" id="<%= q.name + '_other' %>" name="<%= q.name %>" value="other">
+            <label for="<%= q.name + '_other' %>">Other:</label>
+            <input type="text" name="<%= q.name + '_other_text' %>">
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+  <% }) %>
+</body>
+
+</html>
+
+<% } else if (q.type === "Date") { %>
+  <div class="option-input">
+    <input type="date" name="<%= q.name + '_1' %>">
+    <input type="number" name="<%= q.name + '_1_chance' %>" min="0" max="100" placeholder="% chance">
+  </div>
+  <button type="button">Add More Possible Dates</button>
+
+<% } else if (q.type === "Time") { %>
+  <div class="option-input">
+    <input type="time" name="<%= q.name + '_1' %>">
+    <input type="number" name="<%= q.name + '_1_chance' %>" min="0" max="100" placeholder="% chance">
+  </div>
+  <button type="button">Add More Possible Times</button>
+
+<% } else if (q.type === "File Upload") { %>
+  <div class="option-input">
+    <input type="file" name="<%= q.name %>">
+  </div>
+  <p style="font-size: smaller; color: grey;">(Chance input is typically not applicable for file content prefilling)</p>
+
+<% } else if (q.type === "Multiple Choice Grid") { %>
+  <% if (q.options && q.options.rows && q.options.columns) { %>
+    <table>
+      <thead>
+        <tr>
+          <th></th> <% q.options.columns.forEach((col) => { %>
+            <th><%= col %></th>
+          <% }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% q.options.rows.forEach((row, rowIndex) => { %>
+          <tr>
+            <td><%= row %></td>
+            <% q.options.columns.forEach((col, colIndex) => { %>
+              <td style="text-align: center;">
+                <input type="radio" id="<%= q.name + '_row' + rowIndex + '_col' + colIndex %>" name="<%= q.name + '_row' + rowIndex %>" value="<%= col %>">
+                <label for="<%= q.name + '_row' + rowIndex + '_col' + colIndex %>" class="grid-cell-label">Select</label>
+                <input type="number" name="<%= q.name + '_row' + rowIndex + '_col' + colIndex + '_chance' %>" min="0" max="100" placeholder="%">
+              </td>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>Grid options (rows/columns) not defined correctly in JSON.</p>
+  <% } %>
+
+<% } else if (q.type === "Checkbox Grid") { %>
+  <% if (q.options && q.options.rows && q.options.columns) { %>
+    <table>
+      <thead>
+        <tr>
+          <th></th> <% q.options.columns.forEach((col) => { %>
+            <th><%= col %></th>
+          <% }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% q.options.rows.forEach((row, rowIndex) => { %>
+          <tr>
+            <td><%= row %></td>
+            <% q.options.columns.forEach((col, colIndex) => { %>
+              <td style="text-align: center;">
+                <input type="checkbox" id="<%= q.name + '_row' + rowIndex + '_col' + colIndex %>" name="<%= q.name + '_row' + rowIndex %>" value="<%= col %>">
+                 <label for="<%= q.name + '_row' + rowIndex + '_col' + colIndex %>" class="grid-cell-label">Check</label>
+                <input type="number" name="<%= q.name + '_row' + rowIndex + '_col' + colIndex + '_chance' %>" min="0" max="100" placeholder="%">
+              </td>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>Grid options (rows/columns) not defined correctly in JSON.</p>
+  <% } %>
+
+<% } else { %>
+  <p>Unsupported question type: <%= q.type %></p>
+<% } %>

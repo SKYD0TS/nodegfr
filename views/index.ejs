@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survey Form</title>
+  <style>
+  </style>
+</head>
+
+<body>
+  <form id="probabilityForm" method="post" action="/save-probabilities">
+    <% questions.forEach((q) => { %>
+    <div class="question-container">
+      <h4><%= q.question %> (<%= q.type %>)</h4>
+
+      <% if (q.type === "Short Answer") { %>
+      <div class="answer-options">
+        <div class="option-input">
+          <input type="text" name="<%= q.name %>_answers[]" placeholder="Possible answer 1" required>
+          <input type="number" name="<%= q.name %>_chances[]" min="0" max="100" placeholder="% chance" required>
+          <button type="button" class="remove-option" style="display: none;">×</button>
+        </div>
+      </div>
+      <button type="button" class="add-option" data-question="<%= q.name %>">Add More Possible Answers</button>
+      <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
+
+      <% } else if (q.type === "Paragraph") { %>
+      <div class="answer-options">
+        <div class="option-input">
+          <textarea name="<%= q.name %>_answers[]" rows="3" placeholder="Possible answer 1" required></textarea>
+          <input type="number" name="<%= q.name %>_chances[]" min="0" max="100" placeholder="% chance" required>
+          <button type="button" class="remove-option" style="display: none;">×</button>
+        </div>
+      </div>
+      <button type="button" class="add-option" data-question="<%= q.name %>">Add More Possible Answers</button>
+      <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
+
+      <% } else if (q.type === "Multiple Choice") { %>
+      <ul class="answer-options">
+        <% q.options.forEach((option, index) => { %>
+        <li>
+          <label><%= option %></label>
+          <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
+          <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance" required>
+        </li>
+        <% }) %>
+      </ul>
+      <% if (q.hasOtherOptions) { %>
+      <div id="<%= q.name %>-other-container" class="other-options-container">
+        <!-- Other options will be added here dynamically -->
+      </div>
+      <button type="button" class="add-other-option" data-question="<%= q.name %>">
+        + Add Other Option
+      </button>
+      <% } %>
+      <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
+
+      <% } else if (q.type === "Checkboxes") { %>
+      <input type="hidden" name="<%= q.name + '_isMultipleChoice[]' %>" value="true">
+      <ul class="answer-options">
+        <% q.options.forEach((option, index) => { %>
+        <li>
+          <label><%= option %></label>
+          <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
+          <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance checked" required>
+        </li>
+        <% }) %>
+      </ul>
+      <% if (q.hasOtherOptions) { %>
+      <div id="<%= q.name %>-other-container" class="other-options-container">
+        <!-- Other options will be added here dynamically -->
+      </div>
+      <button type="button" class="add-other-option" data-question="<%= q.name %>">
+        + Add Other Option
+      </button>
+      <% } %>
+      <div class="chance-info">Note: Each option has its own independent chance to be selected</div>
+
+      <% } else if (q.type === "Dropdown") { %>
+      <div class="dropdown-options">
+        <div class="dropdown-chances">
+          <ul>
+            <% q.options.forEach((option, index) => { %>
+            <li>
+              <label><%= option %>:</label>
+              <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
+              <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance" required>
+            </li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+      <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
+
+      <% } else if (q.type === "Linear Scale") { %>
+      <ul class="answer-options">
+        <% q.options.forEach((option, index) => { %>
+        <li>
+          <label for="<%= q.name + '_opt_' + index %>"><%= option %></label>
+          <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
+          <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance" required>
+        </li>
+        <% }) %>
+      </ul>
+      <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
+      <% } %>
+    </div>
+    <hr>
+    <% }) %>
+
+    <button type="submit">Save Probabilities</button>
+  </form>
+
+  <script>
+    // Add dynamic option adding/removing for Short Answer and Paragraph types
+    document.querySelectorAll('.add-option').forEach(button => {
+      button.addEventListener('click', function() {
+        const questionName = this.getAttribute('data-question');
+        const optionsContainer = this.previousElementSibling;
+
+        const newOption = document.createElement('div');
+        newOption.className = 'option-input';
+        newOption.innerHTML = `
+            <input type="text" name="${questionName}_answers[]" placeholder="Possible answer" required>
+            <input type="number" name="${questionName}_chances[]" min="0" max="100" placeholder="% chance" required>
+            <button type="button" class="remove-option">×</button>
+          `;
+        if (optionsContainer.querySelector('textarea')) {
+          newOption.innerHTML = `
+                <textarea name="${questionName}_answers[]" rows="3" placeholder="Possible answer" required></textarea>
+                <input type="number" name="${questionName}_chances[]" min="0" max="100" placeholder="% chance" required>
+                <button type="button" class="remove-option">×</button>
+                `;
+        }
+
+        optionsContainer.appendChild(newOption);
+
+        // Show remove buttons if there are multiple options
+        if (optionsContainer.children.length > 1) {
+          optionsContainer.querySelectorAll('.remove-option').forEach(btn => btn.style.display = 'inline-block');
+        }
+
+        // Add event to the new remove button
+        newOption.querySelector('.remove-option').addEventListener('click', function() {
+          this.parentElement.remove();
+          updateChanceTotals();
+
+          // Hide remove buttons if only one option left
+          if (optionsContainer.children.length <= 1) {
+            optionsContainer.querySelector('.remove-option').style.display = 'none';
+          }
+        });
+
+        // Update chance totals when values change
+        newOption.querySelector('input[type="number"]').addEventListener('change', updateChanceTotals);
+      });
+    });
+
+    // Add other option functionality
+    document.querySelectorAll('.add-other-option').forEach(button => {
+      button.addEventListener('click', function() {
+        const questionName = this.getAttribute('data-question');
+        const container = document.getElementById(`${questionName}-other-container`);
+
+        // Create new other option
+        const otherOptionId = Date.now(); // Unique ID for this option
+        const newOption = document.createElement('div');
+        newOption.className = 'other-option';
+        newOption.innerHTML = `
+        <label>Other:</label>
+        <input type="text" name="${questionName}_answers[]" placeholder="Other answer text" required>
+        <input type="number" name="${questionName}_chances[]" min="0" max="100" placeholder="% chance" required>
+        <button type="button" class="remove-other-option" data-question="${questionName}">×</button>
+      `;
+
+        container.appendChild(newOption);
+
+        // Add event listener to the new remove button
+        newOption.querySelector('.remove-other-option').addEventListener('click', function() {
+          this.parentElement.remove();
+          updateChanceTotals();
+        });
+
+        // Update chance totals when new other option is added
+        updateChanceTotals();
+      });
+    });
+
+    // Remove other option functionality
+    document.querySelectorAll('.remove-other-option').forEach(button => {
+      button.addEventListener('click', function() {
+        const questionName = this.getAttribute('data-question');
+        const container = document.getElementById(`${questionName}-other-container`);
+        const addButton = container.parentElement.querySelector('.add-other-option');
+
+        // Clear inputs before hiding
+        container.querySelector('input[type="text"]').value = '';
+        container.querySelector('input[type="number"]').value = '';
+
+        container.style.display = 'none';
+        addButton.style.display = 'block';
+
+        // Update chance totals when other option is removed
+        updateChanceTotals();
+      });
+    });
+
+
+    // Initialize remove option buttons
+    document.querySelectorAll('.remove-option').forEach(button => {
+      button.addEventListener('click', function() {
+        this.parentElement.remove();
+        updateChanceTotals();
+      });
+    });
+
+    // Calculate and display total chances for each question
+    function updateChanceTotals() {
+      document.querySelectorAll('.chance-total').forEach(totalElement => {
+        const questionName = totalElement.getAttribute('data-question');
+        let total = 0;
+
+        // For radio/linear scale/dropdown questions
+        document.querySelectorAll(`input[name="${questionName}_chances[]"]`).forEach(input => {
+          total += Number(input.value) || 0;
+        });
+
+        totalElement.textContent = `Total: ${total}%`;
+
+        // Highlight if total is not 100%
+        if (total !== 100) {
+          totalElement.style.color = 'red';
+          totalElement.title = 'Total should be 100%';
+        } else {
+          totalElement.style.color = 'green';
+          totalElement.title = '';
+        }
+      });
+    }
+
+    // Add change listeners to all chance inputs
+    document.querySelectorAll('input[type="number"][placeholder*="chance"]').forEach(input => {
+      input.addEventListener('change', updateChanceTotals);
+    });
+
+    // Form validation
+    document.getElementById('probabilityForm').addEventListener('submit', function(e) {
+      let isValid = true;
+
+      // Check all chance totals are 100% where needed
+      document.querySelectorAll('.chance-total').forEach(totalElement => {
+        const totalText = totalElement.textContent;
+        const total = parseInt(totalText.match(/\d+/)[0]);
+
+        if (total !== 100) {
+          isValid = false;
+          totalElement.style.border = '1px solid red';
+        } else {
+          totalElement.style.border = 'none';
+        }
+      });
+
+      // if (!isValid) {
+      //   e.preventDefault();
+      //   alert('Please make sure all probability totals equal 100%');
+      // }
+    });
+
+    // Initial update of chance totals
+    updateChanceTotals();
+  </script>
+
+  <style>
+    .question-container {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+
+    .answer-options {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .answer-options li,
+    .option-input {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chance-total {
+      font-weight: bold;
+      margin: 10px 0;
+      padding: 5px;
+    }
+
+    .remove-option {
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remove-option:hover {
+      background: #cc0000;
+    }
+
+    .chance-info {
+      color: #666;
+      font-style: italic;
+      font-size: 0.9em;
+    }
+
+    .dropdown-chances {
+      margin-top: 10px;
+    }
+
+    .dropdown-chances ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .dropdown-chances li {
+      margin-bottom: 5px;
+    }
+
+    .other-option-container {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+    }
+
+    .other-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .add-other-option {
+      background: none;
+      border: 1px dashed #666;
+      color: #666;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .add-other-option:hover {
+      background-color: #f0f0f0;
+    }
+
+    .remove-other-option {
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remove-other-option:hover {
+      background: #cc0000;
+    }
+  </style>
+</body>
+
+</html>
