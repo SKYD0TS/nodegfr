@@ -4,14 +4,13 @@ const https = require('https');
 const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3000;
-const formData = require('./..json');
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 app.get('/scrape', async (req, res) => {
     const url = req.query.url;
-    // formData = await scrape(url)
-    // res.json(formData)
+    formData = await scrape(url)
+    res.json(formData)
     const data = {
         url: url,
         "questions": formData.questions
@@ -21,6 +20,9 @@ app.get('/scrape', async (req, res) => {
 
 app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, res) => {
     const respondCount = req.body.respondCount || 1;
+    if (respondCount > 10 ) {
+        respondCount = 10; // Limit the number of responses to 10
+    }
     const formData = req.body;
     const parsedData = {};
     // Extract all unique question IDs from the form data
