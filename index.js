@@ -10,7 +10,7 @@ app.use(express.static('public'));
 app.get('/scrape', async (req, res) => {
     const url = req.query.url;
     formData = await scrape(url)
-    res.json(formData)
+    // res.json(formData)
     const data = {
         url: url,
         "questions": formData.questions
@@ -180,8 +180,6 @@ function selectWeightedRandomItem(optionsWithWeights) {
 }
 
 async function scrape(url) {
-    if (!url) return res.status(400).json({ error: 'Missing ?url parameter' });
-
     try {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
