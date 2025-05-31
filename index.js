@@ -185,7 +185,7 @@ async function scrape(url) {
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'networkidle2' });
         // Wait specifically for the container or inputs to appear
-        await page.waitForSelector('[jsname="o6bZLc"] input');
+        // await page.waitForSelector('[jsname="o6bZLc"] input');
 
         // Check if inputs exist
         // const inputs = await page.$$('div[jsname="o6bZLc"] input');
