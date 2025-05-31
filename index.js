@@ -4,14 +4,14 @@ const https = require('https');
 const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3000;
-// const formData = require('./..json');
+const formData = require('./..json');
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 app.get('/scrape', async (req, res) => {
     const url = req.query.url;
-    formData = await scrape(url)
-
+    // formData = await scrape(url)
+    // res.json(formData)
     const data = {
         url: url,
         "questions": formData.questions
@@ -48,6 +48,7 @@ app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, re
     let baseUrl = formData.url;
     // return;
     //for loop respondCount times
+    console.log(formData)
     res.send('✅ Successfully submitted to Google Form ' + baseUrl + ' with ' + respondCount + ' responses');
     for (let i = 0; i < respondCount; i++) {
         const formUrl = decodeToGoogleFormUrl(baseUrl, data);

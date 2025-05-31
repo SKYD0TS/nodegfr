@@ -17,25 +17,29 @@
       <h4><%= q.question %> (<%= q.type %>)</h4>
 
       <% if (q.type === "Short Answer") { %>
-      <div class="answer-options">
-        <div class="option-input">
+      <ul class="answer-options">
+        <li class="option-input">
           <input type="text" name="<%= q.name %>_answers[]" placeholder="Possible answer 1" required>
-          <input type="number" name="<%= q.name %>_chances[]" min="0" max="100" placeholder="% chance" required>
+          <input type="number" data-target-name="<%= q.name %>_chances[]" value="100" min="0" max="100" placeholder="% chance" required>
+          <input type="hidden" name="<%= q.name %>_chances[]" value="100" min="0" max="100" required>
+          <p>100.00</p>
           <button type="button" class="remove-option" style="display: none;">×</button>
-        </div>
-      </div>
-      <button type="button" class="add-option" data-question="<%= q.name %>">Add More Possible Answers</button>
+        </li>
+      </ul>
+      <button type="button" class="add-other-option" data-question="<%= q.name %>">Add More Possible Answers</button>
       <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
 
       <% } else if (q.type === "Paragraph") { %>
-      <div class="answer-options">
-        <div class="option-input">
+      <ul class="answer-options">
+        <li class="option-input">
           <textarea name="<%= q.name %>_answers[]" rows="3" placeholder="Possible answer 1" required></textarea>
-          <input type="number" name="<%= q.name %>_chances[]" min="0" max="100" placeholder="% chance" required>
+          <input type="number" data-target-name="<%= q.name %>_chances[]" value="100" min="0" max="100" placeholder="% chance" required>
+          <input type="hidden" name="<%= q.name %>_chances[]" value="100" min="0" max="100" required>
           <button type="button" class="remove-option" style="display: none;">×</button>
-        </div>
-      </div>
-      <button type="button" class="add-option" data-question="<%= q.name %>">Add More Possible Answers</button>
+          <p>100.00</p>
+        </li>
+      </ul>
+      <button type="button" class="add-other-option" data-question="<%= q.name %>">Add More Possible Answers</button>
       <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
 
       <% } else if (q.type === "Multiple Choice") { %>
@@ -43,8 +47,10 @@
         <% q.options.forEach((option, index) => { %>
         <li>
           <label><%= option %></label>
-          <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
-          <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance" required>
+          <input type="hidden" name="<%= q.name %>_answers[]" value="<%= option %>">
+          <input type="number" data-order="<% index %>" data-target-name="<%= q.name %>_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
+          <input type="hidden" name="<%= q.name %>_chances[]" value="0" min="0" max="100" required>
+          <p></p>
         </li>
         <% }) %>
       </ul>
@@ -64,8 +70,10 @@
         <% q.options.forEach((option, index) => { %>
         <li>
           <label><%= option %></label>
-          <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
-          <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance checked" required>
+          <input type="hidden" name="<%= q.name %>_answers[]" value="<%= option %>">
+          <input type="number" data-order="<% index %>" data-target-name="<%= q.name %>_chances[]" value="100" min="0" max="100" placeholder="% chance" required>
+          <input type="hidden" name="<%= q.name %>_chances[]" value="100" min="0" max="100" required>
+          <p>100</p>
         </li>
         <% }) %>
       </ul>
@@ -73,35 +81,33 @@
       <div id="<%= q.name %>-other-container" class="other-options-container">
         <!-- Other options will be added here dynamically -->
       </div>
-      <button type="button" class="add-other-option" data-question="<%= q.name %>">
-        + Add Other Option
-      </button>
+      <button type="button" class="add-other-option" data-question="<%= q.name %>">+ Add Other Option</button>
       <% } %>
       <div class="chance-info">Note: Each option has its own independent chance to be selected</div>
 
       <% } else if (q.type === "Dropdown") { %>
-      <div class="dropdown-options">
-        <div class="dropdown-chances">
-          <ul>
-            <% q.options.forEach((option, index) => { %>
-            <li>
-              <label><%= option %>:</label>
-              <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
-              <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance" required>
-            </li>
-            <% }) %>
-          </ul>
-        </div>
+      <div>
+        <ul class="answer-options">
+          <% q.options.forEach((option, index) => { %>
+          <li>
+            <label><%= option %>:</label>
+            <input type="hidden" name="<%= q.name %>_answers[]" value="<%= option %>">
+            <input type="number" data-order="<% index %>" data-target-name="<%= q.name %>_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
+            <input type="hidden" name="<%= q.name %>_chances[]" value="0" min="0" max="100" required>
+            <p>0.00</p>
+          </li>
+          <% }) %>
+        </ul>
       </div>
-      <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
-
       <% } else if (q.type === "Linear Scale") { %>
       <ul class="answer-options">
         <% q.options.forEach((option, index) => { %>
         <li>
           <label for="<%= q.name + '_opt_' + index %>"><%= option %></label>
           <input type="hidden" name="<%= q.name + '_answers[]' %>" value="<%= option %>">
-          <input type="number" name="<%= q.name + '_chances[]' %>" min="0" max="100" placeholder="% chance" required>
+          <input type="number" data-order="<% index %>" data-target-name="<%= q.name %>_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
+          <input type="hidden" name="<%= q.name %>_chances[]" value="0" min="0" max="100" required>
+          <p>0.00</p>
         </li>
         <% }) %>
       </ul>
@@ -115,68 +121,52 @@
   </form>
 
   <script>
-    // Add dynamic option adding/removing for Short Answer and Paragraph types
-    document.querySelectorAll('.add-option').forEach(button => {
-      button.addEventListener('click', function() {
-        const questionName = this.getAttribute('data-question');
-        const optionsContainer = this.previousElementSibling;
-
-        const newOption = document.createElement('div');
-        newOption.className = 'option-input';
-        newOption.innerHTML = `
-            <input type="text" name="${questionName}_answers[]" placeholder="Possible answer" required>
-            <input type="number" name="${questionName}_chances[]" min="0" max="100" placeholder="% chance" required>
-            <button type="button" class="remove-option">×</button>
-          `;
-        if (optionsContainer.querySelector('textarea')) {
-          newOption.innerHTML = `
-                <textarea name="${questionName}_answers[]" rows="3" placeholder="Possible answer" required></textarea>
-                <input type="number" name="${questionName}_chances[]" min="0" max="100" placeholder="% chance" required>
-                <button type="button" class="remove-option">×</button>
-                `;
-        }
-
-        optionsContainer.appendChild(newOption);
-
-        // Show remove buttons if there are multiple options
-        if (optionsContainer.children.length > 1) {
-          optionsContainer.querySelectorAll('.remove-option').forEach(btn => btn.style.display = 'inline-block');
-        }
-
-        // Add event to the new remove button
-        newOption.querySelector('.remove-option').addEventListener('click', function() {
-          this.parentElement.remove();
-          updateChanceTotals();
-
-          // Hide remove buttons if only one option left
-          if (optionsContainer.children.length <= 1) {
-            optionsContainer.querySelector('.remove-option').style.display = 'none';
-          }
-        });
-
-        // Update chance totals when values change
-        newOption.querySelector('input[type="number"]').addEventListener('change', updateChanceTotals);
+    let allQuestions = document.querySelectorAll('.question-container')
+    allQuestions.forEach(el => el.querySelectorAll('input[data-target-name]').forEach(input => {
+      input.addEventListener('change', function() {
+        let allInputs = this.closest('.question-container').querySelectorAll('input[data-target-name]')
+        handleInputChange(this, allInputs);
       });
-    });
+    }));
 
+    function handleInputChange(input, allInputs) {
+      let container = input.closest('li');
+      const totalInputs = Array.from(allInputs).length;
+      const total = Array.from(allInputs).reduce((sum, input) => sum + parseFloat(input.value) ?? 0, 0);
+      allInputs.forEach((input) => {
+        let container = input.closest('li')
+        let chanceText = container.querySelector("p")
+        let chance = (parseFloat(input.value).toFixed(2) / total * 100).toFixed(2)
+        container.querySelector(`[name="${input.getAttribute('data-target-name')}"]`).value = chance;
+        chanceText.textContent = `${chance}`;
+      });
+    }
+  </script>
+
+  <script>
     // Add other option functionality
     document.querySelectorAll('.add-other-option').forEach(button => {
       button.addEventListener('click', function() {
         const questionName = this.getAttribute('data-question');
-        const container = document.getElementById(`${questionName}-other-container`);
-
+        const questionContainer = this.closest('.question-container');
+        const container = questionContainer.querySelector(`.answer-options`);
+        const optionsCount = container.querySelectorAll('.other-option').length;
         // Create new other option
         const otherOptionId = Date.now(); // Unique ID for this option
-        const newOption = document.createElement('div');
+        const newOption = document.createElement('li');
         newOption.className = 'other-option';
         newOption.innerHTML = `
-        <label>Other:</label>
         <input type="text" name="${questionName}_answers[]" placeholder="Other answer text" required>
-        <input type="number" name="${questionName}_chances[]" min="0" max="100" placeholder="% chance" required>
+        <input type="number" data-target-name="${questionName}_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
+        <input type="hidden" name="${questionName}_chances[]" value="0" min="0" max="100" required>
+        <p>0.00</p>
         <button type="button" class="remove-other-option" data-question="${questionName}">×</button>
       `;
-
         container.appendChild(newOption);
+        let allInputs = container.querySelectorAll('input[data-target-name]');
+        newOption.querySelector('input[data-target-name]').addEventListener('change', function(e) {
+          handleInputChange(this, allInputs);
+        });
 
         // Add event listener to the new remove button
         newOption.querySelector('.remove-other-option').addEventListener('click', function() {
@@ -207,7 +197,6 @@
         updateChanceTotals();
       });
     });
-
 
     // Initialize remove option buttons
     document.querySelectorAll('.remove-option').forEach(button => {
@@ -240,6 +229,17 @@
         }
       });
     }
+
+
+
+    // function redistributeValues() {
+    //   const n = allInputs.length;
+    //   if (n === 0) return;
+    //   const share = (100 / n).toFixed(2);
+    //   for (const input of allInputs) {
+    //     input.value = share;
+    //   }
+    // }
 
     // Add change listeners to all chance inputs
     document.querySelectorAll('input[type="number"][placeholder*="chance"]').forEach(input => {
@@ -295,6 +295,7 @@
     }
 
     .chance-total {
+      display: none;
       font-weight: bold;
       margin: 10px 0;
       padding: 5px;
