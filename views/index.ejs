@@ -26,7 +26,7 @@
           <button type="button" class="remove-option" style="display: none;">×</button>
         </li>
       </ul>
-      <button type="button" class="add-other-option" data-question="<%= q.name %>">Add More Possible Answers</button>
+      <button type="button" class="add-option" data-question="<%= q.name %>">Add More Possible Answers</button>
       <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
 
       <% } else if (q.type === "Paragraph") { %>
@@ -39,7 +39,7 @@
           <p>100.00</p>
         </li>
       </ul>
-      <button type="button" class="add-other-option" data-question="<%= q.name %>">Add More Possible Answers</button>
+      <button type="button" class="add-option" data-question="<%= q.name %>">Add More Possible Answers</button>
       <div class="chance-total" data-question="<%= q.name %>">Total: 0%</div>
 
       <% } else if (q.type === "Multiple Choice") { %>
@@ -50,7 +50,7 @@
           <input type="hidden" name="<%= q.name %>_answers[]" value="<%= option %>">
           <input type="number" data-order="<% index %>" data-target-name="<%= q.name %>_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
           <input type="hidden" name="<%= q.name %>_chances[]" value="0" min="0" max="100" required>
-          <p></p>
+          <p>0.00</p>
         </li>
         <% }) %>
       </ul>
@@ -73,7 +73,7 @@
           <input type="hidden" name="<%= q.name %>_answers[]" value="<%= option %>">
           <input type="number" data-order="<% index %>" data-target-name="<%= q.name %>_chances[]" value="100" min="0" max="100" placeholder="% chance" required>
           <input type="hidden" name="<%= q.name %>_chances[]" value="100" min="0" max="100" required>
-          <p>100</p>
+          <p>100.00</p>
         </li>
         <% }) %>
       </ul>
@@ -138,9 +138,46 @@
         let chanceText = container.querySelector("p")
         let chance = (parseFloat(input.value).toFixed(2) / total * 100).toFixed(2)
         container.querySelector(`[name="${input.getAttribute('data-target-name')}"]`).value = chance;
+		console.log(container.querySelector(`[name="${input.getAttribute('data-target-name')}"]`))
         chanceText.textContent = `${chance}`;
       });
     }
+  </script>
+
+  <script>
+	document.querySelectorAll('.add-option').forEach(button => {
+      button.addEventListener('click', function() {
+        const questionName = this.getAttribute('data-question');
+        const questionContainer = this.closest('.question-container');
+        const container = questionContainer.querySelector(`.answer-options`);
+        const optionsCount = container.querySelectorAll('.other-option').length;
+        // Create new other option
+        const otherOptionId = Date.now(); // Unique ID for this option
+        const newOption = document.createElement('li');
+        newOption.className = 'other-option';
+        newOption.innerHTML = `
+        <input type="text" name="${questionName}_answers[]" placeholder="Other answer text" required>
+        <input type="number" data-target-name="${questionName}_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
+        <input type="hidden" data-other-option name="${questionName}_chances[]" value="0" min="0" max="100" required>
+        <p>0.00</p>
+        <button type="button" class="remove-other-option" data-question="${questionName}">×</button>
+      `;
+        container.appendChild(newOption);
+        let allInputs = container.querySelectorAll('input[data-target-name]');
+        newOption.querySelector('input[data-target-name]').addEventListener('change', function(e) {
+          handleInputChange(this, allInputs);
+        });
+
+        // Add event listener to the new remove button
+        newOption.querySelector('.remove-other-option').addEventListener('click', function() {
+          this.parentElement.remove();
+          updateChanceTotals();
+        });
+
+        // Update chance totals when new other option is added
+        updateChanceTotals();
+      });
+    });
   </script>
 
   <script>
@@ -157,13 +194,19 @@
         newOption.className = 'other-option';
         newOption.innerHTML = `
         <input type="text" name="${questionName}_answers[]" placeholder="Other answer text" required>
+        <input type="hidden" data-answer-other-option name="${questionName}.other_option_response[]" placeholder="Other answer text" required>
+        <input type="hidden" name="${questionName}.is_other_option[]" value="__other_option__" required>
         <input type="number" data-target-name="${questionName}_chances[]" value="0" min="0" max="100" placeholder="% chance" required>
-        <input type="hidden" name="${questionName}_chances[]" value="0" min="0" max="100" required>
+        <input type="hidden" data-other-option name="${questionName}_chances[]" value="0" min="0" max="100" required>
         <p>0.00</p>
         <button type="button" class="remove-other-option" data-question="${questionName}">×</button>
       `;
-        container.appendChild(newOption);
-        let allInputs = container.querySelectorAll('input[data-target-name]');
+	  	container.appendChild(newOption);
+		newOption.querySelector(`input[name="${questionName}_answers[]"]`).addEventListener('change', function(e) {
+		  newOption.querySelector(`input[data-answer-other-option]`).value = this.value;
+		  console.log(newOption.querySelector(`input[data-answer-other-option]`))
+		});
+		let allInputs = container.querySelectorAll('input[data-target-name]');
         newOption.querySelector('input[data-target-name]').addEventListener('change', function(e) {
           handleInputChange(this, allInputs);
         });

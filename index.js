@@ -6,6 +6,8 @@ const app = express();
 const PORT = 3000;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+const RESPOND_COUNT_HARD_LIMIT = 999;
+// const formData = require("..json");
 
 app.get('/scrape', async (req, res) => {
     const url = req.query.url;
@@ -19,85 +21,74 @@ app.get('/scrape', async (req, res) => {
 });
 
 app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, res) => {
-    const respondCount = req.body.respondCount || 1;
-    if (respondCount > 10 ) {
-        respondCount = 10; // Limit the number of responses to 10
-    }
     const formData = req.body;
-    const parsedData = {};
-    // Extract all unique question IDs from the form data
-    const questionIds = new Set(
-        Object.keys(formData).map(key => key.split('_')[0]
-    ));
-    // Process each question
-    questionIds.forEach(questionId => {
-        if(questionId == "url" || questionId == "respondCount") return; // Skip the URL field
-        parsedData[questionId] = {
-            answers: [],
-            chances: [],
-            multipleChoice: false
-        };
+    const respondCount = req.body.respondCount || 1;
+    // const respondCount = 1;
+    if (respondCount > RESPOND_COUNT_HARD_LIMIT) { respondCount = RESPOND_COUNT_HARD_LIMIT; }
 
-        // Process regular answers and chances
-        if (formData[`${questionId}_answers`]) {
-            if(formData[`${questionId}_isMultipleChoice`] == "true") parsedData[questionId].multipleChoice = true;
-            parsedData[questionId].answers = formData[`${questionId}_answers`];
-            parsedData[questionId].chances = formData[`${questionId}_chances`].map(Number);
-        }
-    });
-    const data = remapParsedData(parsedData);
+    // Extract all unique question IDs from the form data
 
     let baseUrl = formData.url;
-    // return;
-    //for loop respondCount times
-    console.log(formData)
-    res.send('✅ Successfully submitted to Google Form ' + baseUrl + ' with ' + respondCount + ' responses');
+    let data = parseData(formData);
+
+    // res.json(formUrl)
+    // res.send('✅ Successfully submitted to Google Form ' + baseUrl + ' with ' + respondCount + ' responses');
     for (let i = 0; i < respondCount; i++) {
         const formUrl = decodeToGoogleFormUrl(baseUrl, data);
         https.get(formUrl, (response) => {
-            console.log(formUrl);
+            console.log(formUrl+"\n")
         });
     }
-    // res.send('Data received and processed');
+    res.send('Data received and processed');
 });
 
 app.listen(PORT, () => {
-    console.log(`✅ Server running at http://localhost:${PORT}`);
 });
 
 function decodeToGoogleFormUrl(baseUrl, data) {
-    //replace viewform with formResponse, use valid regex
     baseUrl = baseUrl.replace(/viewform/, 'formResponse');
-    // IMPORTANT: Replace 'YOUR_GOOGLE_FORM_ID' with your actual Google Form ID
     const urlParams = new URLSearchParams();
 
-    // Iterate through each entry (e.g., a question or field in the form)
     for (const entry of data) {
-        if(entry.name == "url") {
-            console.table(entry);
-            console.table(data);
-            console.table("ahhhh---");
+        // console.log(entry)
+        if (entry.name == "url") {
             continue
         }
         const name = entry.name; // This is the Google Form entry ID (e.g., "entry.1166587114")
+        const isMultipleChoice = entry.checkbox; // This is a boolean indicating if the question allows multiple selections
+        const hasOtherOption = entry.hasOtherOption; // This indicates if the question has an "Other" option
         const items = entry.items; // This is the array of options and their chances
-
+        console.log(entry)
         // Use a variable to hold the selected result, which might be a string or an array of strings
         let selectedResult;
 
         // Corrected conditional: 'entry.type' is a boolean, so compare directly to 'true' or 'false'
-        if (entry.type === true) { // If 'type' is true, it means independent/checkbox selection
+        if (isMultipleChoice) { // If 'type' is true, it means independent/checkbox selection
             selectedResult = selectIndependentOptions(items);
+            // console.log(name,"checkboxRAN++++++++++++++++", selectedResult)
 
             // For independent selections (checkboxes), append each selected option
             selectedResult.forEach(option => {
-                urlParams.append(name, option);
+                if (hasOtherOption && option.isOtherOption) {
+                    urlParams.append(name + '.other_option_response', option.option)
+                    urlParams.append(name, '__other_option__')
+                }
+                else{
+                    urlParams.append(name, option.option); 
+                }
             });
 
         } else { // If 'type' is false, it means weighted/radio selection
             selectedResult = selectWeightedRandomItem(items);
-            // For weighted selections (radio), append the single selected option
-            urlParams.append(name, selectedResult); // selectedResult is already the option string
+            console.log(name,"USUALLRUN++++++++++++++++", selectedResult)
+            if (selectedResult.isOtherOption) {
+                urlParams.append(name + '.other_option_response', selectedResult.option)
+                urlParams.append(name, '__other_option__')
+            }
+            else{
+                // For weighted selections (radio), append the single selected option
+                urlParams.append(name, selectedResult.option); 
+            }
         }
     }
 
@@ -105,9 +96,45 @@ function decodeToGoogleFormUrl(baseUrl, data) {
     return `${baseUrl}&${urlParams.toString()}`;
 }
 
+function parseData(formData) {
+    const remappedOutput = [];
+
+    for (const [entry, value] of Object.entries(formData)) {
+        if (entry === "url" || entry === "respondCount") continue;
+        // if entry ends with answers do something
+        if (entry.endsWith('_answers')) {
+            const questionId = entry.split('_')[0];
+            const multipleChoice = formData[`${questionId}_isMultipleChoice`];
+            const otherOptionResponse = formData[`${questionId}.other_option_response`];
+            const hasOtherOption = formData[`${questionId}.is_other_option`];
+            const items = []
+            value.forEach((answer, i) => {
+                console.log("answer", answer)
+                let isOtherOption = otherOptionResponse == answer;
+                const newAnswer = {
+                    option:answer,
+                    chance: formData[`${questionId}_chances`][i] || 0,
+                    isOtherOption
+                };
+                items.push(newAnswer)
+            })
+            const chances = (formData[`${questionId}_chances`] || []).map(Number);
+            const isMultipleChoice = multipleChoice?multipleChoice[0]:false;
+            const otherOption = formData[entry.split('_')[0] + '.other_option_response']
+            remappedOutput.push({
+                name: questionId,
+                checkbox: isMultipleChoice,
+                hasOtherOption: hasOtherOption?? false,
+                items
+            });
+        }
+    }
+    return remappedOutput;
+}
+
 function remapParsedData(allEntriesData) {
     const remappedOutput = []; // Initialize as an array for the final output
-    // Iterate over each key (e.g., "entry.1166587114", "another.entry.id")
+    // Iterate over each key (e.g., "entry.XXX")
     for (const entryKey in allEntriesData) {
         // Ensure the key belongs to the object itself, not its prototype chain
         if (Object.prototype.hasOwnProperty.call(allEntriesData, entryKey)) {
@@ -136,7 +163,7 @@ function remapParsedData(allEntriesData) {
             // Create the object for the current entry and push it to the final output array
             remappedOutput.push({
                 name: entryKey,
-                type: entryDetails.multipleChoice ?? false,
+                checkbox: entryDetails.multipleChoice ?? false,
                 items: currentEntryRemappedItems
             });
         }
@@ -148,12 +175,12 @@ function remapParsedData(allEntriesData) {
 function selectIndependentOptions(optionsWithProbabilities) {
     const selectedOptions = [];
     for (const item of optionsWithProbabilities) {
-        const option = item.option;
+        const chance = parseFloat(item.chance)
         // Assume 'chance' is a number, either 0.0-1.0 or 0-100. Normalize to 0.0-1.0.
-        const probability = item.chance > 1 ? item.chance / 100 : item.chance;
+        const probability = chance > 1 ? chance / 100 : chance;
 
         if (Math.random() < probability) {
-            selectedOptions.push(option);
+            selectedOptions.push(item);
         }
     }
     return selectedOptions;
@@ -162,21 +189,20 @@ function selectIndependentOptions(optionsWithProbabilities) {
 function selectWeightedRandomItem(optionsWithWeights) {
     let totalWeight = 0;
     for (const item of optionsWithWeights) {
-        totalWeight += item.chance; // 'chance' is a weight here
+        totalWeight += parseFloat(item.chance); // 'chance' is a weight here
     }
-
     const randomNumber = Math.random() * totalWeight;
     let cumulativeWeight = 0;
-
+    
     for (const item of optionsWithWeights) {
-        cumulativeWeight += item.chance;
+        cumulativeWeight += parseFloat(item.chance);
         if (randomNumber < cumulativeWeight) {
-            return item.option; // Return the selected option's name
+            return item; // Return the selected option's name
         }
     }
 
     // Fallback: Returns the last item if floating point precision causes issues at the very end
-    return optionsWithWeights[optionsWithWeights.length - 1].option;
+    return optionsWithWeights[optionsWithWeights.length - 1];
 }
 
 async function scrape(url) {
@@ -189,7 +215,6 @@ async function scrape(url) {
 
         // Check if inputs exist
         // const inputs = await page.$$('div[jsname="o6bZLc"] input');
-        // console.log(`Found ${inputs.length} hidden inputs`);
 
         // html = await page.content();
         // return html

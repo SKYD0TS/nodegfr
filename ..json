@@ -1,58 +1,58 @@
 {
-    "questions": [
-      {
-        "name": "entry.1021243155",
-        "question": "-Short answer",
-        "type": "Short Answer",
-        "options": [],
-        "hasOtherOptions": false
-      },
-      {
-        "name": "entry.1184876989",
-        "question": "-Paragraph",
-        "type": "Paragraph",
-        "options": [],
-        "hasOtherOptions": false
-      },
-      {
-        "name": "entry.1166587114",
-        "question": "-Multiple Choice",
-        "type": "Multiple Choice",
-        "options": [
-          "Option 1",
-          "Option 2",
-          "Option 3"
-        ],
-        "hasOtherOptions": true
-      },
-      {
-        "name": "entry.894418696",
-        "question": "-Checkbox",
-        "type": "Checkboxes",
-        "options": [
-          "Option 1",
-          "Option 2",
-          "Option 3"
-        ],
-        "hasOtherOptions": true
-      },
-      {
-        "name": "entry.784013799",
-        "question": "-Dropdown",
-        "type": "Dropdown",
-        "options": [
-          "Option 1",
-          "Option 2",
-          "Option 3"
-        ],
-        "hasOtherOptions": false
-      },
-      {
-        "name": "entry.1530946951",
-        "question": "-Linear scale",
-        "type": "Linear Scale",
-        "options": [1, 2, 3, 4, 5],
-        "hasOtherOptions": false
-      }
-    ]
-  }
+  "questions": [
+    {
+      "name": "entry.1021243155",
+      "question": "-Short answer",
+      "type": "Short Answer",
+      "options": [],
+      "hasOtherOptions": false
+    },
+    {
+      "name": "entry.1184876989",
+      "question": "-Paragraph",
+      "type": "Paragraph",
+      "options": [],
+      "hasOtherOptions": false
+    },
+    {
+      "name": "entry.1166587114",
+      "question": "-Multiple Choice",
+      "type": "Multiple Choice",
+      "options": [
+        "Option 1",
+        "Option 2",
+        "Option 3"
+      ],
+      "hasOtherOptions": true
+    },
+    {
+      "name": "entry.894418696",
+      "question": "-Checkbox",
+      "type": "Checkboxes",
+      "options": [
+        "Option 1",
+        "Option 2",
+        "Option 3"
+      ],
+      "hasOtherOptions": true
+    },
+    {
+      "name": "entry.784013799",
+      "question": "-Dropdown",
+      "type": "Dropdown",
+      "options": [
+        "Option 1",
+        "Option 2",
+        "Option 3"
+      ],
+      "hasOtherOptions": false
+    },
+    {
+      "name": "entry.1530946951",
+      "question": "-Linear scale",
+      "type": "Linear Scale",
+      "options": [1, 2, 3, 4, 5],
+      "hasOtherOptions": false
+    }
+  ]
+}
