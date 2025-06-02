@@ -20,6 +20,10 @@ app.get('/scrape', async (req, res) => {
     res.render('index', data)
 });
 
+app.get('/', (req, res) => {
+    res.render('home')
+})
+
 app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, res) => {
     const formData = req.body;
     const respondCount = req.body.respondCount || 1;
