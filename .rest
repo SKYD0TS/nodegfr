@@ -27,10 +27,15 @@ https://docs.google.com/forms/d/e/1FAIpQLSdupVABr7sRGjkU0z6bQk1aLDlZKOGBRio2sxTJ
 &entry.784013799=Option+3
 &entry.1530946951=5
 ###
-get https://docs.google.com/forms/d/e/1FAIpQLSdupVABr7sRGjkU0z6bQk1aLDlZKOGBRio2sxTJMA5f1t303Q/formResponse?usp=dialog
-&entry.1021243155=acc&entry.1184876989=pp&entry.1166587114=Option+3&entry.894418696=100op&entry.784013799=Option+2&entry.1530946951=4
-###
-get https://docs.google.com/forms/d/e/1FAIpQLSdupVABr7sRGjkU0z6bQk1aLDlZKOGBRio2sxTJMA5f1t303Q/formResponse?usp=dialog&entry.1021243155=acc&entry.1184876989=pos&entry.1166587114=Option+2&entry.894418696=Option+1&entry.894418696=Option+2&entry.894418696=Option+3&entry.784013799=Option+3&entry.1530946951=4
+https://docs.google.com/forms/d/e/1FAIpQLSfsahvqZcDQJ69wL9E8pDARdVmQsSiL6s4lmLzpbsA7Fv8gLA/formResponse?usp=dialog
+&entry.2113256689=Column+1
+&entry.367452855=Column+1
+&entry.130548361=Column+3
+&entry.1968392752=Option+2
+https://docs.google.com/forms/d/e/1FAIpQLSfsahvqZcDQJ69wL9E8pDARdVmQsSiL6s4lmLzpbsA7Fv8gLA/viewform?usp=pp_url
+&entry.2113256689=Column+1
+&entry.367452855=Column+2
+&entry.130548361=Column+3
 ###
 {
   "questions": [

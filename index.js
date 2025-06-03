@@ -252,6 +252,7 @@ async function scrape(url) {
 
                 let type = 'Unknown';
                 if (el.querySelector('.zwllIb')) type = 'Multiple Choice';
+                else if (el.querySelector('.lLfZXe.fnxRtf.EzyPc')) type = 'Multiple Choice Grid';
                 else if (el.querySelector('.Zki2Ve')) type = 'Linear Scale';
                 else if (el.querySelector('[role=option]')) type = 'Dropdown';
                 else if (el.querySelector('.eBFwI')) type = 'Checkboxes';
@@ -302,7 +303,26 @@ async function scrape(url) {
                         options.push("Scale unavailable");
                     }
                 }
-                questions.push({ name, question, type, options, hasOtherOptions });
+                else if(type === "Multiple Choice Grid"){
+                    const options = []
+                    const row = el.querySelectorAll('.lLfZXe.fnxRtf.EzyPc')
+                    el.querySelector('.ssX1Bd.KZt9Tc').querySelectorAll('.OIC90c').forEach((c)=>{
+                        options.push(c.textContent)
+                    })
+                    row.forEach((r,i)=>{
+                        let name = r.querySelector("input[name^=entry]").getAttribute('name')
+                        name = name.split('_')[0];
+                        // question.push({name:r.textContent, })
+                        // querySelector('.ssX1Bd.KZt9Tc').querySelectorAll('.OIC90c')
+                        questions.push({ name, question:r.textContent, type:"Multiple Choice", options, hasOtherOptions });
+                    })
+                    
+                }
+
+                if(type != "Multiple Choice Grid"){
+                    console.log(type)
+                    questions.push({ name, question, type, options, hasOtherOptions });
+                }
             });
             let externalInputsName = [];
             document.querySelectorAll('input[name^=entry]:not([name$=sentinel])').forEach((i) => { externalInputsName.push(i.name) })
