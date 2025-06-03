@@ -253,6 +253,8 @@ async function scrape(url) {
                 let type = 'Unknown';
                 if (el.querySelector('.zwllIb')) type = 'Multiple Choice';
                 else if (el.querySelector('.lLfZXe.fnxRtf.EzyPc')) type = 'Multiple Choice Grid';
+                else if (el.querySelector('.V4d7Ke.wzWPxe.OIC90c')) type = 'Checkbox Grid';
+                else if (el.querySelector('.ghIlv.s6sSOd')) type = 'Rating';
                 else if (el.querySelector('.Zki2Ve')) type = 'Linear Scale';
                 else if (el.querySelector('[role=option]')) type = 'Dropdown';
                 else if (el.querySelector('.eBFwI')) type = 'Checkboxes';
@@ -303,6 +305,12 @@ async function scrape(url) {
                         options.push("Scale unavailable");
                     }
                 }
+                else if(type === "Rating"){
+                    type = "Linear Scale"
+                    el.querySelector('.vp2Xfc').querySelectorAll('.UNQpic').forEach((r)=>{
+                        options.push(r.textContent.trim())
+                    })
+                }
                 else if(type === "Multiple Choice Grid"){
                     const options = []
                     const row = el.querySelectorAll('.lLfZXe.fnxRtf.EzyPc')
@@ -316,12 +324,25 @@ async function scrape(url) {
                         // querySelector('.ssX1Bd.KZt9Tc').querySelectorAll('.OIC90c')
                         questions.push({ name, question:r.textContent, type:"Multiple Choice", options, hasOtherOptions });
                     })
+                }
+                else if(type === "Checkbox Grid"){
+                    el.querySelector('.ssX1Bd.KZt9Tc').querySelectorAll('.V4d7Ke.OIC90c').forEach((opt)=>{
+                        options.push(opt.textContent.trim())
+                    })
                     
+                    el.querySelectorAll('.EzyPc.mxSrOe').forEach((r)=>{
+                        let name = r.querySelector("input[name^=entry]").getAttribute('name')
+                        name = name.split('_')[0];
+                        questions.push({ name, question, type:"Checkbox", options, hasOtherOptions });
+                    });
                 }
 
-                if(type != "Multiple Choice Grid"){
+                if(type != "Multiple Choice Grid" || type != "Checkbox Grid"){
                     console.log(type)
-                    questions.push({ name, question, type, options, hasOtherOptions });
+                    // !FIX hacky
+                    if(type == "Checkbox Grid"){}else{
+                        questions.push({ name, question, type, options, hasOtherOptions });
+                    }
                 }
             });
             let externalInputsName = [];
