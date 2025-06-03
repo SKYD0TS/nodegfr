@@ -34,16 +34,49 @@ app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, re
 
     let baseUrl = formData.url;
     let data = parseData(formData);
+    let target
+    let newData = []
+    let urlsToSend = []
+    let urlsToSendText
+    let unique = []
+    if (formData['dont-repeat'] == "on") {
+        for (const entry of data) {
+            console.log("entreee", entry)
+            if (entry.name == formData['dont-repeat_target']) {
+                target = entry
+            }
+            else {
+                newData.push(entry)
+            }
+        }
+        target.items.forEach((i, index) => {
+            unique.push(i.option)
+            const formUrl = decodeToGoogleFormUrl(baseUrl, newData);
+            const urlParams = new URLSearchParams();
+            urlParams.append(target.name,i.option)
+            const newForm = `${formUrl}&${urlParams.toString()}`;
+            urlsToSend.push(newForm)
+            urlsToSendText += '\n'+i.option
+            https.get(newForm, (response) => {
+                console.log(formUrl + "\n")
+            });
+        })
+        res.render('dontRepeat',{urlsToSend, unique})
+        // res.json(urlsToSend)
+        // res.send('✅ Successfully submitted to Google Form ' + decodeToGoogleFormUrl(baseUrl, data) + ' with unique ' +  urlsToSendText);
+        return
+    }
 
     // res.json(formUrl)
-    // res.send('✅ Successfully submitted to Google Form ' + baseUrl + ' with ' + respondCount + ' responses');
     for (let i = 0; i < respondCount; i++) {
         const formUrl = decodeToGoogleFormUrl(baseUrl, data);
         https.get(formUrl, (response) => {
-            console.log(formUrl+"\n")
+            console.log(formUrl + "\n")
         });
     }
-    res.send('Data received and processed');
+    res.send('✅ Successfully submitted to Google Form ' + decodeToGoogleFormUrl(baseUrl, data) + ' with ' + respondCount + ' responses');
+    // res.send('Data received and processed');
+    return
 });
 
 app.listen(PORT, () => {
@@ -78,7 +111,7 @@ function decodeToGoogleFormUrl(baseUrl, data) {
                     urlParams.append(name, '__other_option__')
                 }
                 else{
-                    urlParams.append(name, option.option); 
+                    urlParams.append(name, option.option);
                 }
             });
 
@@ -91,7 +124,7 @@ function decodeToGoogleFormUrl(baseUrl, data) {
             }
             else{
                 // For weighted selections (radio), append the single selected option
-                urlParams.append(name, selectedResult.option); 
+                urlParams.append(name, selectedResult.option);
             }
         }
     }
@@ -197,7 +230,7 @@ function selectWeightedRandomItem(optionsWithWeights) {
     }
     const randomNumber = Math.random() * totalWeight;
     let cumulativeWeight = 0;
-    
+
     for (const item of optionsWithWeights) {
         cumulativeWeight += parseFloat(item.chance);
         if (randomNumber < cumulativeWeight) {
@@ -329,7 +362,7 @@ async function scrape(url) {
                     el.querySelector('.ssX1Bd.KZt9Tc').querySelectorAll('.V4d7Ke.OIC90c').forEach((opt)=>{
                         options.push(opt.textContent.trim())
                     })
-                    
+
                     el.querySelectorAll('.EzyPc.mxSrOe').forEach((r)=>{
                         let name = r.querySelector("input[name^=entry]").getAttribute('name')
                         name = name.split('_')[0];

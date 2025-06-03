@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="dontrepeat" method="POST">
+        <ul>
+            <% urlsToSend.forEach((url, i)=>{%>
+                <li><p><span><%= unique[i]+" =" %></span><%= url %></p></li>
+                <input type="hidden" name="urls[]" value="<%= url %>">
+            <%})%>
+        </ul>
+        <button type="submit">Respond</button>
+    </form>
+</body>
+</html>

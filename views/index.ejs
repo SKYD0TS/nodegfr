@@ -11,10 +11,15 @@
 
 <body>
   <form id="probabilityForm" method="post" action="/save-probabilities">
-    <input type="text" hidden name="url" value="<%=url%>">
+    <div>
+      <input name="dont-repeat" type="checkbox">
+      <label for="">dont repeat question name</label>
+      <input name="dont-repeat_target" type="text">
+    </div>
+      <input type="text" hidden name="url" value="<%=url%>">
     <% questions.forEach((q) => { %>
     <div class="question-container">
-      <h4><%= q.question %> (<%= q.type %>)</h4>
+      <h4><%= q.question %> (<%= q.type %>)</h4><p><%=q.name%></p>
 
       <% if (q.type === "Short Answer") { %>
       <ul class="answer-options">
