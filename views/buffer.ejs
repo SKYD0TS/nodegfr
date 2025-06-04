@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <label for="">to viewform</label>
+        <input type="checkbox" name="viewform" id="">
+    </div>
+    <form action="execute-links" method="POST">
+        <h3>count: <%= urlsToSend.length %></h3>
+        <ul>
+            <% urlsToSend.forEach((url, i)=>{%>
+                <li class="link-li" style="width:max-content;padding:0 0">
+                    <a target="_blank"><%= url %></a>
+                    <input type="hidden" name="urls[]" value="<%= url %>">
+                </li>
+            <%})%>
+        </ul>
+        <button type="submit">Respond</button>
+    </form>
+    <script>
+        document.querySelector("input[name=viewform]").addEventListener('change',(e)=>{
+            console.log(e.target.checked)
+            if(e.target.checked){
+                document.querySelectorAll("li.link-li").forEach(li => {
+                    const a = li.querySelector('a')
+                    const link = li.querySelector('input').value
+                    a.href = link.replace(/formResponse/, 'viewform');
+                    a.innerText = link.replace(/formResponse/, 'viewform');
+                });
+            }else{
+                document.querySelectorAll("li.link-li").forEach(li => {
+                    const a = li.querySelector('a')
+                    const link = li.querySelector('input').value
+
+                    a.removeAttribute('href')
+                    a.innerText = link.replace(/viewform/, 'formResponse');;
+                });
+            }
+        })
+            
+    </script>
+</body>
+</html>

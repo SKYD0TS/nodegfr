@@ -2,11 +2,18 @@ const express = require('express');
 const http = require('http');
 const https = require('https');
 const puppeteer = require('puppeteer');
+const { Faker, id_ID } = require('@faker-js/faker');
 const app = express();
 const PORT = 3000;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 const RESPOND_COUNT_HARD_LIMIT = 999;
+// !FIX dont do ts
+const HARD_CODED_NAMEFAKER = true;
+const faker = new Faker({
+    locale:[id_ID]
+})
+faker.locale = 'id_ID'
 // const formData = require("..json");
 
 app.get('/scrape', async (req, res) => {
@@ -31,17 +38,82 @@ app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, re
     if (respondCount > RESPOND_COUNT_HARD_LIMIT) { respondCount = RESPOND_COUNT_HARD_LIMIT; }
 
     // Extract all unique question IDs from the form data
-
+    
     let baseUrl = formData.url;
     let data = parseData(formData);
-    let target
+    let nameFakerEntry
+    let cityFakerEntry
+    let genderFakerEntry
     let newData = []
     let urlsToSend = []
     let urlsToSendText
     let unique = []
-    if (formData['dont-repeat'] == "on") {
+    // separate between data and generated data
+    for (const entry of data) {
+        if (formData['name-faker'] && entry.name == formData['name-faker'])  {
+            nameFakerEntry = entry
+        }
+        else if(formData['gender-faker'] && entry.name == formData['gender-faker'] ){
+            genderFakerEntry = entry
+        }
+        else if(formData['city-faker'] && entry.name == formData['city-faker'] ){
+            cityFakerEntry = entry
+        }
+        else {
+            newData.push(entry)
+        }
+    }
+    // console.log(newData)
+    for (let i = 0; i < respondCount; i++) {
+        let fakerGender = Math.random() < 0.3?'Laki-laki' : 'Perempuan'
+        let fakerName = faker.person.firstName(fakerGender=="Perempuan"?"female":"male")
+        let fakerCity = faker.location.city()
+        if(Math.random() < 0.7){
+            fakerName = fakerName.toLowerCase()
+        }
+        const formUrl = decodeToGoogleFormUrl(baseUrl, newData);
+        const urlParams = new URLSearchParams();
+        if (formData["name-faker"]) {
+            urlParams.append(nameFakerEntry.name, fakerName)
+        }
+        if (formData["gender-faker"]) {
+            urlParams.append(genderFakerEntry.name, fakerGender)
+        }
+        if (formData["city-faker"]) {
+            urlParams.append(cityFakerEntry.name, fakerCity)
+        }
+        const newForm = `${formUrl}&${urlParams.toString()}`;
+        urlsToSend.push(newForm)
+    }
+    
+    console.log(urlsToSend)
+    res.render('buffer',{urlsToSend})
+    return 
+    // let urlsuccess = 0;
+    // let urlLinkStatus = [];
+    // let promises = urlsToSend.map((u) => {
+    //     return new Promise((resolve) => {
+    //         setTimeout(function() {
+    //             https.get(u, (response) => {
+    //                 urlLinkStatus.push({u, s:response.statusCode})
+    //                 if (response.statusCode == 200) {
+    //                     urlsuccess++;
+    //                 }
+    //                 console.log(u, response.statusCode);
+    //                 resolve(); // Resolve the promise after the request is completed
+    //             });
+    //         }, 200);
+    //     });
+    // });
+
+    // Wait for all requests to finish
+    Promise.all(promises).then(() => {
+        res.send([urlsuccess, urlsToSend, urlLinkStatus, urlsToSend.length]);
+    });
+    return
+    if (formData['dont-repeat_name']) {
         for (const entry of data) {
-            console.log("entreee", entry)
+            // console.log("entreee", entry)
             if (entry.name == formData['dont-repeat_target']) {
                 target = entry
             }
@@ -57,9 +129,9 @@ app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, re
             const newForm = `${formUrl}&${urlParams.toString()}`;
             urlsToSend.push(newForm)
             urlsToSendText += '\n'+i.option
-            https.get(newForm, (response) => {
-                console.log(formUrl + "\n")
-            });
+            // https.get(newForm, (response) => {
+            //     console.log(formUrl + "\n")
+            // });
         })
         res.render('dontRepeat',{urlsToSend, unique})
         // res.json(urlsToSend)
@@ -70,17 +142,43 @@ app.post('/save-probabilities', express.urlencoded({ extended: true }), (req, re
     // res.json(formUrl)
     for (let i = 0; i < respondCount; i++) {
         const formUrl = decodeToGoogleFormUrl(baseUrl, data);
-        https.get(formUrl, (response) => {
-            console.log(formUrl + "\n")
-        });
+        // https.get(formUrl, (response) => {
+        //     console.log(formUrl + "\n")
+        // });
     }
     res.send('✅ Successfully submitted to Google Form ' + decodeToGoogleFormUrl(baseUrl, data) + ' with ' + respondCount + ' responses');
     // res.send('Data received and processed');
     return
 });
 
+app.post('/execute-links', express.urlencoded({ extended: true }), (req, res) => {
+    let urlsuccess = 0;
+    let urlLinkStatus = [];
+    const urlsToSend = req.body.urls
+    let promises = urlsToSend.map((u) => {
+        return new Promise((resolve) => {
+            setTimeout(function() {
+                https.get(u, (response) => {
+                    urlLinkStatus.push({u, s:response.statusCode})
+                    if (response.statusCode == 200) {
+                        urlsuccess++;
+                    }
+                    console.log(u, response.statusCode);
+                    resolve(); // Resolve the promise after the request is completed
+                });
+            }, 200);
+        });
+    });
+
+    Promise.all(promises).then(() => {
+        res.send([{WARNING:"RETURN AFTER RESPOND, DO NOT RELOAD HERE",urlsuccess, targetCount:urlsToSend.length, urlsToSend, urlLinkStatus}]);
+    });
+})
+
 app.listen(PORT, () => {
-});
+  console.log(`Example app listening on port ${PORT}`)
+})
+
 
 function decodeToGoogleFormUrl(baseUrl, data) {
     baseUrl = baseUrl.replace(/viewform/, 'formResponse');
@@ -95,7 +193,7 @@ function decodeToGoogleFormUrl(baseUrl, data) {
         const isMultipleChoice = entry.checkbox; // This is a boolean indicating if the question allows multiple selections
         const hasOtherOption = entry.hasOtherOption; // This indicates if the question has an "Other" option
         const items = entry.items; // This is the array of options and their chances
-        console.log(entry)
+        // console.log(entry)
         // Use a variable to hold the selected result, which might be a string or an array of strings
         let selectedResult;
 
@@ -117,7 +215,7 @@ function decodeToGoogleFormUrl(baseUrl, data) {
 
         } else { // If 'type' is false, it means weighted/radio selection
             selectedResult = selectWeightedRandomItem(items);
-            console.log(name,"USUALLRUN++++++++++++++++", selectedResult)
+            // console.log(name,"USUALLRUN++++++++++++++++", selectedResult)
             if (selectedResult.isOtherOption) {
                 urlParams.append(name + '.other_option_response', selectedResult.option)
                 urlParams.append(name, '__other_option__')
@@ -146,7 +244,7 @@ function parseData(formData) {
             const hasOtherOption = formData[`${questionId}.is_other_option`];
             const items = []
             value.forEach((answer, i) => {
-                console.log("answer", answer)
+                // console.log("answer", answer)
                 let isOtherOption = otherOptionResponse == answer;
                 const newAnswer = {
                     option:answer,
@@ -276,13 +374,6 @@ async function scrape(url) {
                     }
                 }
 
-                if (name == null) {
-                    name = externalInputIndex
-                    externalInputIndex++
-                } else {
-                    name = name.split('_')[0];
-                }
-
                 let type = 'Unknown';
                 if (el.querySelector('.zwllIb')) type = 'Multiple Choice';
                 else if (el.querySelector('.lLfZXe.fnxRtf.EzyPc')) type = 'Multiple Choice Grid';
@@ -293,7 +384,15 @@ async function scrape(url) {
                 else if (el.querySelector('.eBFwI')) type = 'Checkboxes';
                 else if (el.querySelector('textarea')) type = 'Paragraph';
                 else if (el.querySelector('input[type="text"]')) type = 'Short Answer';
+                if(type == "Unknown") return
 
+                if (name == null && type != "Unknown") {
+                    name = externalInputIndex
+                    externalInputIndex++
+                } else {
+                    name = name.split('_')[0];
+                }
+                
                 let hasOtherOptions = false;
                 const options = [];
                 if (type === 'Multiple Choice') {
@@ -371,7 +470,7 @@ async function scrape(url) {
                 }
 
                 if(type != "Multiple Choice Grid" || type != "Checkbox Grid"){
-                    console.log(type)
+                    // console.log(type)
                     // !FIX hacky
                     if(type == "Checkbox Grid"){}else{
                         questions.push({ name, question, type, options, hasOtherOptions });
